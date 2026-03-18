@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROV POC Simulator — Robótica Subaquática</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #060c14;
+    --bg2: #0a1628;
+    --bg3: #0f1f38;
+    --card: #0d1b30;
+    --border: rgba(56,138,221,0.18);
+    --border2: rgba(56,138,221,0.35);
+    --blue: #378ADD;
+    --teal: #1D9E75;
+    --amber: #EF9F27;
+    --red: #E24B4A;
+    --purple: #7F77DD;
+    --pink: #D4537E;
+    --text: #e8f0fa;
+    --text2: #7a9ab8;
+    --text3: #3d5a7a;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --glow-blue: 0 0 20px rgba(55,138,221,0.3);
+    --glow-teal: 0 0 20px rgba(29,158,117,0.3);
+    --glow-amber: 0 0 20px rgba(239,159,39,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 3rem 2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 200px;
+    background: radial-gradient(ellipse, rgba(55,138,221,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-inner { max-width: 1100px; margin: 0 auto; }
+  .header-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--blue);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(22px, 4vw, 38px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+  h1 span { color: var(--blue); }
+  .header-sub {
+    font-size: 14px;
+    color: var(--text2);
+    margin-top: 10px;
+    max-width: 600px;
+    line-height: 1.6;
+  }
+
+  /* ── NAV TABS ── */
+  .nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(6,12,20,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+  .nav-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-inner::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 14px 18px;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    background: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+  }
+  .nav-tab:hover { color: var(--text2); }
+  .nav-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* ── MAIN LAYOUT ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+  /* ── SECTION ── */
+  .section {
+    display: none;
+    animation: fadein 0.4s ease;
+  }
+  .section.active { display: block; }
+  @keyframes fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 6px;
+  }
+  .section-heading {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .section-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+    margin-bottom: 2rem;
+    max-width: 700px;
+  }
+
+  /* ── SIM CARD ── */
+  .sim-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .sim-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .poc-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+  .sim-card-title { font-size: 15px; font-weight: 600; }
+  .sim-card-body {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 0;
+  }
+  @media (max-width: 768px) {
+    .sim-card-body { grid-template-columns: 1fr; }
+  }
+
+  /* ── CANVAS AREA ── */
+  .canvas-area {
+    background: #050b14;
+    position: relative;
+    min-height: 300px;
+  }
+  canvas { display: block; }
+
+  /* ── CONTROLS PANEL ── */
+  .controls-panel {
+    padding: 20px;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .ctrl-group { display: flex; flex-direction: column; gap: 8px; }
+  .ctrl-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ctrl-value {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--blue);
+    background: rgba(55,138,221,0.1);
+    padding: 2px 7px;
+    border-radius: 4px;
+    min-width: 52px;
+    text-align: center;
+  }
+  .ctrl-value.green { color: var(--teal); background: rgba(29,158,117,0.1); }
+  .ctrl-value.amber { color: var(--amber); background: rgba(239,159,39,0.1); }
+  .ctrl-value.red { color: var(--red); background: rgba(226,75,74,0.1); }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg3);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: 2px solid var(--bg);
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+  input[type=range].green::-webkit-slider-thumb { background: var(--teal); }
+  input[type=range].amber::-webkit-slider-thumb { background: var(--amber); }
+  input[type=range].red::-webkit-slider-thumb { background: var(--red); }
+  input[type=range].purple::-webkit-slider-thumb { background: var(--purple); }
+
+  .ctrl-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .metric-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .metric-box .label { font-size: 10px; color: var(--text3); font-family: var(--mono); letter-spacing: 0.5px; }
+  .metric-box .val { font-size: 16px; font-weight: 600; font-family: var(--mono); color: var(--text); margin-top: 2px; }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--blue);
+    transition: all 0.15s;
+  }
+  .btn:hover { background: rgba(55,138,221,0.1); }
+  .btn.active { background: rgba(55,138,221,0.15); border-color: var(--blue); }
+
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── OVERVIEW GRID ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 1.5rem;
+  }
+  .ov-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ov-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+  }
+  .ov-card-tag { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .ov-card-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .ov-card-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .ov-card-icon { font-size: 28px; margin-bottom: 10px; }
+  .ov-has-sim { border-left: 3px solid var(--blue); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-label">// Softtek × Engenharia — POC Lab</div>
+    <h1>ROV <span>Simulator</span><br>Robótica Subaquática</h1>
+    <p class="header-sub">16 Provas de Conceito com simuladores físicos interativos. Ajuste os parâmetros com sliders e observe como o modelo responde em tempo real.</p>
+  </div>
+</header>
+
+<nav class="nav-bar">
+  <div class="nav-inner">
+    <button class="nav-tab active" onclick="showSection('overview')">Visão Geral</button>
+    <button class="nav-tab" onclick="showSection('pid')">PID / Controle</button>
+    <button class="nav-tab" onclick="showSection('ai-heading')">IA de Direção</button>
+    <button class="nav-tab" onclick="showSection('empuxo')">Empuxo</button>
+    <button class="nav-tab" onclick="showSection('lifi')">Li-Fi / Acústico</button>
+    <button class="nav-tab" onclick="showSection('hidrodinamica')">Hidrodinâmica</button>
+    <button class="nav-tab" onclick="showSection('lastro')">Lastro Ativo</button>
+    <button class="nav-tab" onclick="showSection('vedacao')">Vedação</button>
+    <button class="nav-tab" onclick="showSection('thrust')">Propulsão</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════════
+     OVERVIEW
+══════════════════════════════════════════════════════ -->
+<div id="sec-overview" class="section active">
+  <div class="section-title">// 16 POCs</div>
+  <div class="section-heading">Todas as Provas de Conceito</div>
+  <p class="section-desc">Cards com simulador interativo estão marcados em azul. Clique para navegar diretamente à simulação.</p>
+  <div class="overview-grid" id="ov-grid"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PID
+══════════════════════════════════════════════════════ -->
+<div id="sec-pid" class="section">
+  <div class="section-title">// POC 2 — Controle</div>
+  <div class="section-heading">Simulador PID — Profundidade 1-DOF</div>
+  <p class="section-desc">Ajuste os ganhos Kp, Ki e Kd e observe como o ROV responde ao tentar atingir a profundidade alvo. O gráfico mostra o erro ao longo do tempo. Um Kp muito alto causa oscilações, Ki corrige o erro residual, Kd amorte as oscilações.</p>
+
+  <div class="sim-card">
+    <div class="sim-card-header">
+      <span class="poc-badge" style="background:rgba(29,158,117,0.15);color:#1D9E75">POC 2A</span>
+      <span class="sim-card-title">Controle de Profundidade com PID</span>
+    </div>
+    <div class="sim-card-body">
+      <div class="canvas-area">
+        <canvas id="pid-canvas" width="700" height="360"></canvas>
+      </div>
+      <div class="controls-panel">
+        <div class="ctrl-group">
+          <div class="ctrl-label">Kp — Proporcional <span class="ctrl-value" id="kp-val">1.5</span></div>
+          <input type="range" id="kp" min="0" max="5" step="0.1" value="1.5" oninput="updatePID()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Ki — Integral <span class="ctrl-value green" id="ki-val">0.3</span></div>
+          <input type="range" class="green" id="ki" min="0" max="2" step="0.05" value="0.3" oninput="updatePID()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Kd — Derivativo <span class="ctrl-value amber" id="kd-val">0.8</span></div>
+          <input type="range" class="amber" id="kd" min="0" max="3" step="0.1" value="0.8" oninput="updatePID()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Profundidade Alvo (m) <span class="ctrl-value" id="depth-target-val">2.0</span></div>
+          <input type="range" id="depth-target" min="0.5" max="5" step="0.1" value="2.0" oninput="updatePID()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Perturbação <span class="ctrl-value red" id="disturbance-val">0</span></div>
+          <input type="range" class="red" id="disturbance" min="0" max="3" step="0.1" value="0" oninput="updatePID()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="label">Overshoot</div><div class="val" id="pid-overshoot">—</div></div>
+          <div class="metric-box"><div class="label">Settle (s)</div><div class="val" id="pid-settle">—</div></div>
+          <div class="metric-box"><div class="label">Erro Res.</div><div class="val" id="pid-residual">—</div></div>
+          <div class="metric-box"><div class="label">Oscilações</div><div class="val" id="pid-oscillations">—</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" onclick="resetPID()">Reiniciar</button>
+          <button class="btn" id="pid-perturb-btn" onclick="perturbPID()">Empurrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     AI HEADING
+══════════════════════════════════════════════════════ -->
+<div id="sec-ai-heading" class="section">
+  <div class="section-title">// POC 2B — IA de Direção</div>
+  <div class="section-heading">IA de Controle de Heading — Ondas e Perturbações</div>
+  <p class="section-desc">Simule um ROV tentando manter um heading (direção) sob ondas e correntes. Ajuste a intensidade das ondas, a agressividade da IA e os ganhos de controle para encontrar o melhor desempenho. O ROV usa um controlador proporcional-derivativo no heading com aprendizado adaptativo.</p>
+
+  <div class="sim-card">
+    <div class="sim-card-header">
+      <span class="poc-badge" style="background:rgba(127,119,221,0.15);color:#7F77DD">POC 2B + IA</span>
+      <span class="sim-card-title">Heading Control — Ambiente Subaquático com IA Adaptativa</span>
+    </div>
+    <div class="sim-card-body">
+      <div class="canvas-area">
+        <canvas id="ai-canvas" width="700" height="360"></canvas>
+      </div>
+      <div class="controls-panel">
+        <div class="ctrl-group">
+          <div class="ctrl-label" style="color:#E24B4A">Intensidade das Ondas <span class="ctrl-value red" id="wave-int-val">1.0</span></div>
+          <input type="range" class="red" id="wave-int" min="0" max="5" step="0.1" value="1.0" oninput="updateAI()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label" style="color:#E24B4A">Frequência das Ondas <span class="ctrl-value red" id="wave-freq-val">0.5</span></div>
+          <input type="range" class="red" id="wave-freq" min="0.1" max="3" step="0.1" value="0.5" oninput="updateAI()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label" style="color:#E24B4A">Corrente Lateral <span class="ctrl-value red" id="current-val">0.3</span></div>
+          <input type="range" class="red" id="current-drift" min="0" max="2" step="0.1" value="0.3" oninput="updateAI()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="ctrl-group">
+          <div class="ctrl-label" style="color:#7F77DD">Ganho IA (agressividade) <span class="ctrl-value" style="color:#7F77DD;background:rgba(127,119,221,0.1)" id="ai-gain-val">0.6</span></div>
+          <input type="range" class="purple" id="ai-gain" min="0.05" max="2" step="0.05" value="0.6" oninput="updateAI()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label" style="color:#7F77DD">Aprendizado Adaptativo <span class="ctrl-value" style="color:#7F77DD;background:rgba(127,119,221,0.1)" id="ai-learn-val">0.4</span></div>
+          <input type="range" class="purple" id="ai-learn" min="0" max="1" step="0.05" value="0.4" oninput="updateAI()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Heading Alvo (°) <span class="ctrl-value" id="heading-target-val">0°</span></div>
+          <input type="range" id="heading-target" min="-180" max="180" step="5" value="0" oninput="updateAI()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="label">Erro Heading</div><div class="val" id="ai-heading-err">—</div></div>
+          <div class="metric-box"><div class="label">Estabilidade</div><div class="val" id="ai-stability">—</div></div>
+          <div class="metric-box"><div class="label">Energia Motor</div><div class="val" id="ai-energy">—</div></div>
+          <div class="metric-box"><div class="label">Eficiência IA</div><div class="val" id="ai-efficiency">—</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn active" id="ai-toggle" onclick="toggleAI()">IA: ON</button>
+          <button class="btn" onclick="resetAI()">Reiniciar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     EMPUXO
+══════════════════════════════════════════════════════ -->
+<div id="sec-empuxo" class="section">
+  <div class="section-title">// POC 4 — Flutuabilidade</div>
+  <div class="section-heading">Simulador de Empuxo e Flutuabilidade Neutra</div>
+  <p class="section-desc">Simule o Princípio de Arquimedes. Ajuste volume, massa e densidade do fluido. O sistema automático de lastro tenta manter flutuabilidade neutra.</p>
+
+  <div class="sim-card">
+    <div class="sim-card-header">
+      <span class="poc-badge" style="background:rgba(239,159,39,0.15);color:#EF9F27">POC 4A+B</span>
+      <span class="sim-card-title">Empuxo Estático + Lastro Automático</span>
+    </div>
+    <div class="sim-card-body">
+      <div class="canvas-area">
+        <canvas id="empuxo-canvas" width="700" height="360"></canvas>
+      </div>
+      <div class="controls-panel">
+        <div class="ctrl-group">
+          <div class="ctrl-label">Volume do ROV (L) <span class="ctrl-value amber" id="vol-val">5.0</span></div>
+          <input type="range" class="amber" id="rov-vol" min="1" max="15" step="0.1" value="5.0" oninput="updateEmpuxo()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Massa do ROV (kg) <span class="ctrl-value amber" id="mass-val">4.8</span></div>
+          <input type="range" class="amber" id="rov-mass" min="0.5" max="20" step="0.1" value="4.8" oninput="updateEmpuxo()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Densidade Fluido (kg/L) <span class="ctrl-value" id="fluid-val">1.025</span></div>
+          <input type="range" id="fluid-dens" min="0.9" max="1.2" step="0.005" value="1.025" oninput="updateEmpuxo()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Lastro Extra (kg) <span class="ctrl-value red" id="ballast-val">0.0</span></div>
+          <input type="range" class="red" id="ballast" min="0" max="5" step="0.05" value="0.0" oninput="updateEmpuxo()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Profundidade Alvo (m) <span class="ctrl-value green" id="depth-val">2.0</span></div>
+          <input type="range" class="green" id="depth-set" min="0.1" max="10" step="0.1" value="2.0" oninput="updateEmpuxo()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="label">Empuxo (N)</div><div class="val" id="buoyancy-force">—</div></div>
+          <div class="metric-box"><div class="label">Peso (N)</div><div class="val" id="weight-force">—</div></div>
+          <div class="metric-box"><div class="label">Força Net</div><div class="val" id="net-force">—</div></div>
+          <div class="metric-box"><div class="label">Estado</div><div class="val" id="buoyancy-state">—</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn active" id="auto-ballast-btn" onclick="toggleAutoBallast()">Auto-Lastro: ON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     LI-FI / ACOUSTIC
+══════════════════════════════════════════════════════ -->
+<div id="sec-lifi" class="section">
+  <div class="section-title">// POC 1 — Comunicação</div>
+  <div class="section-heading">Li-Fi Subaquático & Modem Acústico</div>
+  <p class="section-desc">Simule como a turbidez da água, a distância e a frequência afetam a qualidade do sinal óptico (Li-Fi) e acústico. Observe a degradação do sinal em tempo real.</p>
+
+  <div class="sim-card">
+    <div class="sim-card-header">
+      <span class="poc-badge" style="background:rgba(55,138,221,0.15);color:#378ADD">POC 1A+B</span>
+      <span class="sim-card-title">Qualidade de Sinal — Óptico vs Acústico</span>
+    </div>
+    <div class="sim-card-body">
+      <div class="canvas-area">
+        <canvas id="comm-canvas" width="700" height="360"></canvas>
+      </div>
+      <div class="controls-panel">
+        <div class="ctrl-group">
+          <div class="ctrl-label">Turbidez da Água <span class="ctrl-value red" id="turbidity-val">0.3</span></div>
+          <input type="range" class="red" id="turbidity" min="0" max="1" step="0.01" value="0.3" oninput="updateComm()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Distância (m) <span class="ctrl-value" id="comm-dist-val">2.0</span></div>
+          <input type="range" id="comm-dist" min="0.1" max="10" step="0.1" value="2.0" oninput="updateComm()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Frequência Li-Fi (Hz) <span class="ctrl-value" id="lifi-freq-val">1000</span></div>
+          <input type="range" id="lifi-freq" min="100" max="10000" step="100" value="1000" oninput="updateComm()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Freq. Acústica (kHz) <span class="ctrl-value green" id="acoustic-freq-val">40</span></div>
+          <input type="range" class="green" id="acoustic-freq" min="20" max="200" step="5" value="40" oninput="updateComm()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="label">SNR Li-Fi</div><div class="val" id="snr-lifi">—</div></div>
+          <div class="metric-box"><div class="label">SNR Acúst.</div><div class="val" id="snr-acoustic">—</div></div>
+          <div class="metric-box"><div class="label">BER Li-Fi</div><div class="val" id="ber-lifi">—</div></div>
+          <div class="metric-box"><div class="label">Latência</div><div class="val" id="comm-latency">—</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn active" id="comm-mode-btn" onclick="toggleCommMode()">Modo: Li-Fi</button>
+          <button class="btn" onclick="resetComm()">Reiniciar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     HIDRODINÂMICA
+══════════════════════════════════════════════════════ -->
+<div id="sec-hidrodinamica" class="section">
+  <div class="section-title">// POC 3 — Arrasto</div>
+  <div class="section-heading">Simulador de Arrasto Hidrodinâmico</div>
+  <p class="section-desc">Compare como diferentes formatos de casco reagem ao aumento de velocidade. Veja como o coeficiente de arrasto (Cd) e a área frontal afetam a força resistiva.</p>
+
+  <div class="sim-card">
+    <div class="sim-card-header">
+      <span class="poc-badge" style="background:rgba(29,158,117,0.15);color:#1D9E75">POC 3A</span>
+      <span class="sim-card-title">Drag Rig — Comparação de Formatos de Casco</span>
+    </div>
+    <div class="sim-card-body">
+      <div class="canvas-area">
+        <canvas id="drag-canvas" width="700" height="360"></canvas>
+      </div>
+      <div class="controls-panel">
+        <div class="ctrl-group">
+          <div class="ctrl-label">Velocidade (m/s) <span class="ctrl-value" id="drag-vel-val">0.5</span></div>
+          <input type="range" id="drag-vel" min="0.01" max="3" step="0.01" value="0.5" oninput="updateDrag()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Densidade Fluido (kg/m³) <span class="ctrl-value" id="drag-dens-val">1025</span></div>
+          <input type="range" id="drag-dens" min="900" max="1100" step="5" value="1025" oninput="updateDrag()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Forma do Casco</div>
+          <div class="btn-row">
+            <button class="btn active" id="btn-sphere" onclick="setShape('sphere')">Esfera</button>
+            <button class="btn" id="btn-box" onclick="setShape('box')">Cubo</button>
+            <button class="btn" id="btn-drop" onclick="setShape('drop')">Gota</button>
+            <button class="btn" id="btn-cylinder" onclick="setShape('cylinder')">Cilindro</button>
+          </div>
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="label">Cd</div><div class="val" id="drag-cd">—</div></div>
+          <div class="metric-box"><div class="label">Força (N)</div><div class="val" id="drag-force">—</div></div>
+          <div class="metric-box"><div class="label">Área (m²)</div><div class="val" id="drag-area">—</div></div>
+          <div class="metric-box"><div class="label">Re ×10³</div><div class="val" id="drag-re">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     LASTRO
+══════════════════════════════════════════════════════ -->
+<div id="sec-lastro" class="section">
+  <div class="section-title">// POC 6 — Lastro Ativo</div>
+  <div class="section-heading">Pistão de Seringa e Bomba Peristáltica</div>
+  <p class="section-desc">Visualize como o pistão de seringa muda a densidade do ROV ao deslocar água. Compare com o sistema de bomba peristáltica entre dois tanques internos.</p>
+
+  <div class="sim-card">
+    <div class="sim-card-header">
+      <span class="poc-badge" style="background:rgba(212,83,126,0.15);color:#D4537E">POC 6A</span>
+      <span class="sim-card-title">Tanque de Pistão — Controle de Volume</span>
+    </div>
+    <div class="sim-card-body">
+      <div class="canvas-area">
+        <canvas id="piston-canvas" width="700" height="360"></canvas>
+      </div>
+      <div class="controls-panel">
+        <div class="ctrl-group">
+          <div class="ctrl-label">Posição do Pistão (%) <span class="ctrl-value" style="color:#D4537E;background:rgba(212,83,126,0.1)" id="piston-pos-val">50</span></div>
+          <input type="range" class="purple" id="piston-pos" min="0" max="100" step="1" value="50" oninput="updatePiston()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Volume Total Seringa (mL) <span class="ctrl-value" id="syringe-vol-val">60</span></div>
+          <input type="range" id="syringe-vol" min="20" max="120" step="5" value="60" oninput="updatePiston()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Massa do ROV (kg) <span class="ctrl-value amber" id="piston-mass-val">3.0</span></div>
+          <input type="range" class="amber" id="piston-mass" min="1" max="8" step="0.1" value="3.0" oninput="updatePiston()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="label">Vol. Água (mL)</div><div class="val" id="piston-water-vol">—</div></div>
+          <div class="metric-box"><div class="label">Densidade</div><div class="val" id="piston-density">—</div></div>
+          <div class="metric-box"><div class="label">Estado</div><div class="val" id="piston-state">—</div></div>
+          <div class="metric-box"><div class="label">Torque (N·cm)</div><div class="val" id="piston-torque">—</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" onclick="pistonAuto()">Auto-Neutro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     VEDAÇÃO
+══════════════════════════════════════════════════════ -->
+<div id="sec-vedacao" class="section">
+  <div class="section-title">// POC 5 — Vedação</div>
+  <div class="section-heading">Câmara de Pressão & Encapsulamento</div>
+  <p class="section-desc">Simule o teste de pressão hidrostática. Veja como a profundidade aumenta a pressão e como diferentes materiais de vedação respondem.</p>
+
+  <div class="sim-card">
+    <div class="sim-card-header">
+      <span class="poc-badge" style="background:rgba(226,75,74,0.15);color:#E24B4A">POC 5A</span>
+      <span class="sim-card-title">Câmara de Pressão — Teste de Vedação</span>
+    </div>
+    <div class="sim-card-body">
+      <div class="canvas-area">
+        <canvas id="seal-canvas" width="700" height="360"></canvas>
+      </div>
+      <div class="controls-panel">
+        <div class="ctrl-group">
+          <div class="ctrl-label">Profundidade (m) <span class="ctrl-value red" id="seal-depth-val">5</span></div>
+          <input type="range" class="red" id="seal-depth" min="0" max="300" step="1" value="5" oninput="updateSeal()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Temperatura (°C) <span class="ctrl-value amber" id="seal-temp-val">20</span></div>
+          <input type="range" class="amber" id="seal-temp" min="0" max="40" step="1" value="20" oninput="updateSeal()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Material de Vedação</div>
+          <div class="btn-row">
+            <button class="btn" id="seal-oring" onclick="setSealMat('oring')">O-Ring</button>
+            <button class="btn" id="seal-epoxy" onclick="setSealMat('epoxy')">Epóxi</button>
+            <button class="btn active" id="seal-silicone" onclick="setSealMat('silicone')">Silicone</button>
+          </div>
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="label">Pressão (bar)</div><div class="val" id="seal-pressure">—</div></div>
+          <div class="metric-box"><div class="label">Integridade</div><div class="val" id="seal-integrity">—</div></div>
+          <div class="metric-box"><div class="label">Limite (bar)</div><div class="val" id="seal-limit">—</div></div>
+          <div class="metric-box"><div class="label">Status</div><div class="val" id="seal-status">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     THRUST
+══════════════════════════════════════════════════════ -->
+<div id="sec-thrust" class="section">
+  <div class="section-title">// POC 8 — Propulsão</div>
+  <div class="section-heading">Thrust Stand — Hélices e Eficiência</div>
+  <p class="section-desc">Meça a força gerada por diferentes configurações de hélice impressa em 3D. Otimize o passo e o diâmetro para máxima eficiência no meio subaquático.</p>
+
+  <div class="sim-card">
+    <div class="sim-card-header">
+      <span class="poc-badge" style="background:rgba(226,75,74,0.12);color:#E24B4A">POC 8A+B</span>
+      <span class="sim-card-title">Thrust Stand — Otimização de Hélice</span>
+    </div>
+    <div class="sim-card-body">
+      <div class="canvas-area">
+        <canvas id="thrust-canvas" width="700" height="360"></canvas>
+      </div>
+      <div class="controls-panel">
+        <div class="ctrl-group">
+          <div class="ctrl-label">RPM <span class="ctrl-value red" id="rpm-val">3000</span></div>
+          <input type="range" class="red" id="rpm" min="500" max="8000" step="100" value="3000" oninput="updateThrust()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Diâmetro Hélice (mm) <span class="ctrl-value" id="prop-diam-val">70</span></div>
+          <input type="range" id="prop-diam" min="30" max="150" step="5" value="70" oninput="updateThrust()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Passo (pitch ratio) <span class="ctrl-value amber" id="prop-pitch-val">0.8</span></div>
+          <input type="range" class="amber" id="prop-pitch" min="0.3" max="1.5" step="0.05" value="0.8" oninput="updateThrust()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Nº de Pás <span class="ctrl-value green" id="prop-blades-val">3</span></div>
+          <input type="range" class="green" id="prop-blades" min="2" max="5" step="1" value="3" oninput="updateThrust()">
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-label">Submerso <span class="ctrl-value" id="submerged-val">SIM</span></div>
+          <input type="range" id="submerged" min="0" max="1" step="1" value="1" oninput="updateThrust()">
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="metrics-grid">
+          <div class="metric-box"><div class="label">Thrust (gf)</div><div class="val" id="thrust-force">—</div></div>
+          <div class="metric-box"><div class="label">Corrente (A)</div><div class="val" id="thrust-current">—</div></div>
+          <div class="metric-box"><div class="label">Eficiência</div><div class="val" id="thrust-eff">—</div></div>
+          <div class="metric-box"><div class="label">Potência (W)</div><div class="val" id="thrust-power">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  event.target.classList.add('active');
+  // init simulation for that section
+  const inits = {
+    pid: () => { resetPID(); },
+    'ai-heading': () => { resetAI(); },
+    empuxo: () => { initEmpuxo(); },
+    lifi: () => { initComm(); },
+    hidrodinamica: () => { initDrag(); },
+    lastro: () => { initPiston(); },
+    vedacao: () => { initSeal(); },
+    thrust: () => { initThrust(); }
+  };
+  if (inits[id]) setTimeout(inits[id], 50);
+}
+
+// ══════════════════════════════════════════════════════
+// OVERVIEW
+// ══════════════════════════════════════════════════════
+const pocData = [
+  { id:'lifi', cat:'Comunicação', title:'Li-Fi Subaquático', poc:'POC 1A', desc:'Transmitir texto via LED/fotodiodo através de aquário.', icon:'💡', sim:true, nav:'lifi' },
+  { id:'acoustic', cat:'Comunicação', title:'Modem Acústico', poc:'POC 1B', desc:'Transmitir comandos por frequências ultrassônicas.', icon:'🔊', sim:true, nav:'lifi' },
+  { id:'pid-depth', cat:'PID/Controle', title:'Estabilizador de Profundidade', poc:'POC 2A', desc:'Manter profundidade exata com controle PID.', icon:'⚙️', sim:true, nav:'pid' },
+  { id:'pid-heading', cat:'PID/Controle', title:'Controle de Heading com IA', poc:'POC 2B', desc:'Manter direção sob ondas e correntes.', icon:'🧭', sim:true, nav:'ai-heading' },
+  { id:'drag', cat:'Hidrodinâmica', title:'Bancada de Arrasto', poc:'POC 3A', desc:'Comparar drag de formatos de casco 3D.', icon:'🌊', sim:true, nav:'hidrodinamica' },
+  { id:'flow', cat:'Hidrodinâmica', title:'Visualizador de Fluxo', poc:'POC 3B', desc:'Canal com injeção de corante para ver turbulências.', icon:'🎨', sim:false, nav:'' },
+  { id:'buoyancy-s', cat:'Flutuabilidade', title:'Balança de Empuxo', poc:'POC 4A', desc:'Medir força de empuxo em volumes ocos vs maciços.', icon:'⚖️', sim:true, nav:'empuxo' },
+  { id:'buoyancy-n', cat:'Flutuabilidade', title:'Flutuabilidade Neutra Auto', poc:'POC 4B', desc:'Sistema de lastro automático para manter profundidade.', icon:'🤿', sim:true, nav:'empuxo' },
+  { id:'seal-press', cat:'Vedação', title:'Câmara de Pressão DIY', poc:'POC 5A', desc:'Tubo PVC com O-rings para testar vedação sob pressão.', icon:'🔒', sim:true, nav:'vedacao' },
+  { id:'seal-pot', cat:'Vedação', title:'Teste de Encapsulamento', poc:'POC 5B', desc:'Comparar epóxi vs silicone vs caixa estanque.', icon:'🧪', sim:true, nav:'vedacao' },
+  { id:'piston', cat:'Lastro Ativo', title:'Pistão com Nema 17', poc:'POC 6A', desc:'Seringa 60ml movida por motor de passo.', icon:'💉', sim:true, nav:'lastro' },
+  { id:'peristaltic', cat:'Lastro Ativo', title:'Bomba Peristáltica', poc:'POC 6B', desc:'Transferir água entre tanques internos.', icon:'🔄', sim:false, nav:'' },
+  { id:'cg-dyn', cat:'Estabilidade', title:'Simulador de CG Dinâmico', poc:'POC 7A', desc:'Plataforma com peso móvel para auto-nivelamento.', icon:'📐', sim:false, nav:'' },
+  { id:'righting', cat:'Estabilidade', title:'Braço de Adriçamento', poc:'POC 7B', desc:'Medir ângulo máximo antes de capotar.', icon:'📏', sim:false, nav:'' },
+  { id:'thrust-stand', cat:'Propulsão', title:'Thrust Stand para Hélices 3D', poc:'POC 8A', desc:'Medir força de diferentes hélices impressas.', icon:'🌀', sim:true, nav:'thrust' },
+  { id:'thrust-sub', cat:'Propulsão', title:'Eficiência Motor Submerso', poc:'POC 8B', desc:'Testar perda de força motor submerso vs superfície.', icon:'⚡', sim:true, nav:'thrust' },
+];
+
+const ovGrid = document.getElementById('ov-grid');
+const catColors = {
+  'Comunicação': '#378ADD', 'PID/Controle': '#1D9E75', 'Hidrodinâmica': '#639922',
+  'Flutuabilidade': '#EF9F27', 'Vedação': '#E24B4A', 'Lastro Ativo': '#D4537E',
+  'Estabilidade': '#7F77DD', 'Propulsão': '#D85A30'
+};
+pocData.forEach(p => {
+  const col = catColors[p.cat] || '#378ADD';
+  const card = document.createElement('div');
+  card.className = 'ov-card' + (p.sim ? ' ov-has-sim' : '');
+  card.innerHTML = `
+    <div class="ov-card-icon">${p.icon}</div>
+    <div class="ov-card-tag" style="color:${col}">${p.poc} · ${p.cat}</div>
+    <div class="ov-card-title">${p.title}</div>
+    <div class="ov-card-desc">${p.desc}${p.sim ? '<br><span style="color:'+col+';font-size:11px;margin-top:4px;display:block">▶ Simulador interativo →</span>' : ''}</div>
+  `;
+  if (p.sim && p.nav) {
+    card.onclick = () => {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(t => { if(t.textContent.toLowerCase().includes(p.nav.replace('-',' ').split('').slice(0,4).join(''))) t.classList.add('active'); });
+      showSectionDirect(p.nav);
+    };
+    card.style.cursor = 'pointer';
+  }
+  ovGrid.appendChild(card);
+});
+
+function showSectionDirect(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  const inits = { pid: () => resetPID(), 'ai-heading': () => resetAI(), empuxo: () => initEmpuxo(), lifi: () => initComm(), hidrodinamica: () => initDrag(), lastro: () => initPiston(), vedacao: () => initSeal(), thrust: () => initThrust() };
+  if (inits[id]) setTimeout(inits[id], 50);
+  // scroll to top
+  window.scrollTo({top: 0, behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════════════════
+// PID SIMULATOR
+// ══════════════════════════════════════════════════════
+let pidState = { pos: 0, vel: 0, integral: 0, prevErr: 0, time: 0 };
+let pidHistory = [];
+let pidRAF;
+
+function resetPID() {
+  pidState = { pos: 0, vel: 0, integral: 0, prevErr: 0, time: 0 };
+  pidHistory = [];
+  if (pidRAF) cancelAnimationFrame(pidRAF);
+  runPID();
+}
+
+function updatePID() {
+  document.getElementById('kp-val').textContent = parseFloat(document.getElementById('kp').value).toFixed(1);
+  document.getElementById('ki-val').textContent = parseFloat(document.getElementById('ki').value).toFixed(2);
+  document.getElementById('kd-val').textContent = parseFloat(document.getElementById('kd').value).toFixed(1);
+  document.getElementById('depth-target-val').textContent = parseFloat(document.getElementById('depth-target').value).toFixed(1);
+  document.getElementById('disturbance-val').textContent = parseFloat(document.getElementById('disturbance').value).toFixed(1);
+}
+
+function perturbPID() {
+  pidState.vel += (Math.random() - 0.5) * 1.5;
+}
+
+let pidLastTime = 0;
+function runPID() {
+  const canvas = document.getElementById('pid-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const dt = 0.016;
+
+  const kp = parseFloat(document.getElementById('kp').value);
+  const ki = parseFloat(document.getElementById('ki').value);
+  const kd = parseFloat(document.getElementById('kd').value);
+  const target = parseFloat(document.getElementById('depth-target').value);
+  const disturbance = parseFloat(document.getElementById('disturbance').value);
+
+  // PID step
+  const err = target - pidState.pos;
+  pidState.integral += err * dt;
+  pidState.integral = Math.max(-10, Math.min(10, pidState.integral));
+  const derivative = (err - pidState.prevErr) / dt;
+  const force = kp * err + ki * pidState.integral + kd * derivative;
+  pidState.prevErr = err;
+
+  const noise = disturbance * (Math.sin(pidState.time * 2.3) * 0.5 + (Math.random()-0.5) * 0.3);
+  const netAcc = force * 0.5 - pidState.vel * 0.8 + noise;
+  pidState.vel += netAcc * dt;
+  pidState.vel = Math.max(-5, Math.min(5, pidState.vel));
+  pidState.pos += pidState.vel * dt;
+  pidState.time += dt;
+
+  pidHistory.push({ t: pidState.time, pos: pidState.pos, err });
+  if (pidHistory.length > 400) pidHistory.shift();
+
+  // DRAW
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#050b14';
+  ctx.fillRect(0, 0, W, H);
+
+  // ROV visual (left panel)
+  const rovPanelW = 200;
+  const maxDepth = 8;
+  const rovY = H/2 - (pidState.pos / maxDepth) * (H * 0.38);
+  
+  // Water
+  ctx.fillStyle = '#0d2240';
+  ctx.fillRect(0, 0, rovPanelW, H);
+  for (let i = 0; i < 6; i++) {
+    const t = pidState.time * 0.8 + i;
+    const x = (i * 38 + Math.sin(t) * 10);
+    const y = 20 + Math.sin(t * 1.2) * 5;
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(55,138,221,0.3)';
+    ctx.fill();
+  }
+
+  // Target line
+  const targetY = H/2 - (target / maxDepth) * (H * 0.38);
+  ctx.strokeStyle = 'rgba(29,158,117,0.5)';
+  ctx.setLineDash([6, 4]);
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, targetY); ctx.lineTo(rovPanelW, targetY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#1D9E75';
+  ctx.font = '10px Space Mono, monospace';
+  ctx.fillText('alvo', 4, targetY - 4);
+
+  // ROV body
+  const rovClamped = Math.max(20, Math.min(H-20, H/2 - (pidState.pos/maxDepth) * (H*0.38)));
+  ctx.fillStyle = '#1a3a5c';
+  ctx.strokeStyle = '#378ADD';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(rovPanelW/2 - 28, rovClamped - 12, 56, 24, 5);
+  ctx.fill(); ctx.stroke();
+  // Thrusters
+  ctx.fillStyle = '#0d2a3a';
+  ctx.strokeStyle = '#5DCAA5';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.roundRect(rovPanelW/2 - 8, rovClamped - 22, 16, 10, 3); ctx.fill(); ctx.stroke();
+
+  // Force indicator
+  const forceNorm = Math.max(-1, Math.min(1, force / 5));
+  const indColor = forceNorm > 0 ? '#1D9E75' : '#E24B4A';
+  ctx.strokeStyle = indColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(rovPanelW/2, rovClamped + 12);
+  ctx.lineTo(rovPanelW/2, rovClamped + 12 + forceNorm * 25);
+  ctx.stroke();
+  ctx.fillStyle = indColor;
+  ctx.font = '9px Space Mono, monospace';
+  ctx.fillText(force.toFixed(1)+'N', rovPanelW/2 + 5, rovClamped + 12 + forceNorm * 25);
+
+  // Depth label
+  ctx.fillStyle = '#7a9ab8';
+  ctx.font = '10px Space Mono, monospace';
+  ctx.fillText(pidState.pos.toFixed(2) + 'm', 4, rovClamped + 30);
+
+  // Separator
+  ctx.strokeStyle = 'rgba(55,138,221,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(rovPanelW, 0); ctx.lineTo(rovPanelW, H); ctx.stroke();
+
+  // Graph area
+  const gX = rovPanelW + 20, gW = W - rovPanelW - 40;
+  const gY = 20, gH = H - 40;
+
+  // Graph background
+  for (let i = 0; i <= 5; i++) {
+    const gy = gY + (gH / 5) * i;
+    ctx.strokeStyle = 'rgba(55,138,221,0.06)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(gX, gy); ctx.lineTo(gX + gW, gy); ctx.stroke();
+  }
+
+  // Position trace
+  if (pidHistory.length > 1) {
+    ctx.strokeStyle = '#378ADD';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    pidHistory.forEach((h, i) => {
+      const px = gX + (i / pidHistory.length) * gW;
+      const py = gY + gH/2 - (h.pos / maxDepth) * (gH * 0.38);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+
+    // Error trace
+    ctx.strokeStyle = 'rgba(226,75,74,0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    pidHistory.forEach((h, i) => {
+      const px = gX + (i / pidHistory.length) * gW;
+      const py = gY + gH/2 - (h.err / maxDepth) * (gH * 0.38);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+  }
+
+  // Target line on graph
+  const tgy = gY + gH/2 - (target/maxDepth)*(gH*0.38);
+  ctx.strokeStyle = 'rgba(29,158,117,0.4)'; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(gX, tgy); ctx.lineTo(gX+gW, tgy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Axis labels
+  ctx.fillStyle = '#3d5a7a'; ctx.font = '9px Space Mono, monospace';
+  ctx.fillText('pos', gX + 2, 16);
+  ctx.fillStyle = 'rgba(226,75,74,0.7)';
+  ctx.fillText('erro', gX + 30, 16);
+  ctx.fillStyle = 'rgba(29,158,117,0.8)';
+  ctx.fillText('alvo', gX + 60, 16);
+
+  // Metrics
+  const lastPos = pidHistory.length > 5 ? pidHistory[pidHistory.length - 1].pos : 0;
+  const residual = Math.abs(lastPos - target);
+  let overs = 0;
+  for (let i = 1; i < pidHistory.length-1; i++) {
+    if ((pidHistory[i].pos - target) * (pidHistory[i-1].pos - target) < -0.01) overs++;
+  }
+  document.getElementById('pid-overshoot').textContent = overs > 0 ? '+' + (Math.max(0, Math.max(...pidHistory.map(h=>h.pos)) - target)).toFixed(2) : '0.00';
+  document.getElementById('pid-settle').textContent = (pidState.time * 0.8).toFixed(1) + 's';
+  document.getElementById('pid-residual').textContent = residual.toFixed(3) + 'm';
+  document.getElementById('pid-oscillations').textContent = Math.floor(overs/2);
+
+  pidRAF = requestAnimationFrame(runPID);
+}
+
+// ══════════════════════════════════════════════════════
+// AI HEADING SIMULATOR
+// ══════════════════════════════════════════════════════
+let aiState = { heading: 0, omega: 0, time: 0, adaptGain: 0.6, errHistory: [] };
+let aiActive = true;
+let aiRAF;
+
+function resetAI() {
+  aiState = { heading: Math.random() * 60 - 30, omega: 0, time: 0, adaptGain: 0.6, errHistory: [] };
+  if (aiRAF) cancelAnimationFrame(aiRAF);
+  runAI();
+}
+
+function toggleAI() {
+  aiActive = !aiActive;
+  const btn = document.getElementById('ai-toggle');
+  btn.textContent = 'IA: ' + (aiActive ? 'ON' : 'OFF');
+  btn.classList.toggle('active', aiActive);
+}
+
+function updateAI() {
+  document.getElementById('wave-int-val').textContent = parseFloat(document.getElementById('wave-int').value).toFixed(1);
+  document.getElementById('wave-freq-val').textContent = parseFloat(document.getElementById('wave-freq').value).toFixed(1);
+  document.getElementById('current-val').textContent = parseFloat(document.getElementById('current-drift').value).toFixed(1);
+  document.getElementById('ai-gain-val').textContent = parseFloat(document.getElementById('ai-gain').value).toFixed(2);
+  document.getElementById('ai-learn-val').textContent = parseFloat(document.getElementById('ai-learn').value).toFixed(2);
+  document.getElementById('heading-target-val').textContent = document.getElementById('heading-target').value + '°';
+}
+
+let aiHistory = [];
+let motorEnergyHistory = [];
+
+function runAI() {
+  const canvas = document.getElementById('ai-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const dt = 0.016;
+
+  const waveInt = parseFloat(document.getElementById('wave-int').value);
+  const waveFreq = parseFloat(document.getElementById('wave-freq').value);
+  const currentDrift = parseFloat(document.getElementById('current-drift').value);
+  const aiGain = parseFloat(document.getElementById('ai-gain').value);
+  const aiLearn = parseFloat(document.getElementById('ai-learn').value);
+  const headingTarget = parseFloat(document.getElementById('heading-target').value);
+
+  // Wave disturbance
+  const waveDist = waveInt * Math.sin(aiState.time * waveFreq * 2) + waveInt * 0.3 * Math.sin(aiState.time * waveFreq * 3.7);
+  const currentTorque = currentDrift * 15;
+  const totalDist = waveDist * 20 + currentTorque;
+
+  let controlTorque = 0;
+  let motorEnergy = 0;
+
+  if (aiActive) {
+    const err = headingTarget - aiState.heading;
+    const errNorm = ((err + 180) % 360) - 180;
+    // Adaptive gain
+    if (aiLearn > 0 && aiState.errHistory.length > 20) {
+      const recentErr = aiState.errHistory.slice(-20).reduce((s,e) => s + Math.abs(e), 0) / 20;
+      aiState.adaptGain += (recentErr > 5 ? 0.01 : -0.005) * aiLearn;
+      aiState.adaptGain = Math.max(0.1, Math.min(3, aiState.adaptGain));
+    }
+    const effectiveGain = aiGain * aiState.adaptGain;
+    controlTorque = effectiveGain * errNorm - effectiveGain * 0.3 * aiState.omega;
+    motorEnergy = Math.abs(controlTorque) * 0.1;
+  }
+
+  aiState.errHistory.push(headingTarget - aiState.heading);
+  if (aiState.errHistory.length > 100) aiState.errHistory.shift();
+
+  const inertia = 0.5;
+  const damping = 0.3;
+  const alpha = (controlTorque + totalDist - damping * aiState.omega) / inertia;
+  aiState.omega += alpha * dt;
+  aiState.omega = Math.max(-180, Math.min(180, aiState.omega));
+  aiState.heading += aiState.omega * dt;
+  aiState.time += dt;
+
+  aiHistory.push({ t: aiState.time, h: aiState.heading, target: headingTarget, wave: waveDist * 20 });
+  if (aiHistory.length > 350) aiHistory.shift();
+  motorEnergyHistory.push(motorEnergy);
+  if (motorEnergyHistory.length > 350) motorEnergyHistory.shift();
+
+  // DRAW
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#050b14';
+  ctx.fillRect(0, 0, W, H);
+
+  // Water with waves
+  const waterY = H * 0.5;
+  ctx.fillStyle = '#0d2240';
+  ctx.fillRect(0, 0, W, waterY);
+  ctx.fillStyle = '#071828';
+  ctx.fillRect(0, waterY, W, H - waterY);
+
+  // Wave surface
+  ctx.strokeStyle = 'rgba(55,138,221,0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let x = 0; x <= W; x += 3) {
+    const wy = waterY + waveInt * 12 * Math.sin((x * 0.02) + aiState.time * waveFreq * 3) + waveInt * 5 * Math.sin((x * 0.035) + aiState.time * waveFreq * 5);
+    x === 0 ? ctx.moveTo(x, wy) : ctx.lineTo(x, wy);
+  }
+  ctx.stroke();
+
+  // Compass in center
+  const cx = 120, cy = H * 0.55, cr = 75;
+  ctx.fillStyle = '#0a1a30';
+  ctx.strokeStyle = 'rgba(55,138,221,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, cr-8, 0, Math.PI*2); ctx.strokeStyle = 'rgba(55,138,221,0.1)'; ctx.stroke();
+
+  // Cardinal directions
+  const dirs = ['N','E','S','W'];
+  dirs.forEach((d,i) => {
+    const a = i * Math.PI/2 - Math.PI/2;
+    const tx = cx + Math.cos(a) * (cr - 14);
+    const ty = cy + Math.sin(a) * (cr - 14) + 4;
+    ctx.fillStyle = d === 'N' ? '#E24B4A' : '#3d5a7a';
+    ctx.font = d === 'N' ? '700 11px Space Mono, monospace' : '10px Space Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(d, tx, ty);
+  });
+  ctx.textAlign = 'left';
+
+  // Target heading indicator
+  const targetRad = (headingTarget * Math.PI / 180) - Math.PI/2;
+  ctx.strokeStyle = 'rgba(29,158,117,0.5)';
+  ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(targetRad)*cr*0.85, cy + Math.sin(targetRad)*cr*0.85);
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // Current heading arrow
+  const headRad = (aiState.heading * Math.PI / 180) - Math.PI/2;
+  const arrowLen = cr * 0.7;
+  ctx.strokeStyle = '#378ADD';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(headRad)*arrowLen, cy + Math.sin(headRad)*arrowLen);
+  ctx.stroke();
+  // Arrowhead
+  const ax = cx + Math.cos(headRad)*arrowLen, ay = cy + Math.sin(headRad)*arrowLen;
+  ctx.fillStyle = '#378ADD';
+  ctx.beginPath();
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(ax + Math.cos(headRad-2.5)*10, ay + Math.sin(headRad-2.5)*10);
+  ctx.lineTo(ax + Math.cos(headRad+2.5)*10, ay + Math.sin(headRad+2.5)*10);
+  ctx.closePath(); ctx.fill();
+
+  // Center dot
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill();
+
+  // Heading label
+  ctx.fillStyle = '#378ADD'; ctx.font = '700 14px Space Mono, monospace'; ctx.textAlign = 'center';
+  ctx.fillText(((aiState.heading % 360 + 360) % 360).toFixed(0) + '°', cx, cy + cr + 18);
+  ctx.textAlign = 'left';
+
+  // IA gain display
+  ctx.fillStyle = 'rgba(127,119,221,0.7)'; ctx.font = '9px Space Mono, monospace';
+  ctx.fillText('adapt: ' + aiState.adaptGain.toFixed(2), cx - cr, cy + cr + 32);
+
+  // Graph (right side)
+  const gX = 250, gW = W - gX - 20, gY = 15, gH = H - 30;
+  ctx.strokeStyle = 'rgba(55,138,221,0.06)'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 6; i++) {
+    const gy = gY + (gH/6)*i;
+    ctx.beginPath(); ctx.moveTo(gX, gy); ctx.lineTo(gX+gW, gy); ctx.stroke();
+  }
+
+  // Zero line
+  ctx.strokeStyle = 'rgba(55,138,221,0.2)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(gX, gY + gH/2); ctx.lineTo(gX+gW, gY+gH/2); ctx.stroke();
+
+  const hRange = 90;
+  if (aiHistory.length > 2) {
+    // Wave disturbance
+    ctx.strokeStyle = 'rgba(226,75,74,0.3)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    aiHistory.forEach((h,i) => {
+      const px = gX + (i/aiHistory.length)*gW;
+      const py = gY + gH/2 - (h.wave/hRange)*(gH*0.42);
+      i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+
+    // Heading trace
+    ctx.strokeStyle = '#378ADD'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    aiHistory.forEach((h,i) => {
+      const px = gX + (i/aiHistory.length)*gW;
+      const py = gY + gH/2 - (h.h/hRange)*(gH*0.42);
+      i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+
+    // Target line
+    const tpy = gY + gH/2 - (headingTarget/hRange)*(gH*0.42);
+    ctx.strokeStyle = 'rgba(29,158,117,0.5)'; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(gX,tpy); ctx.lineTo(gX+gW,tpy); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  ctx.fillStyle = '#3d5a7a'; ctx.font = '9px Space Mono, monospace';
+  ctx.fillText('heading', gX+2, 12);
+  ctx.fillStyle = 'rgba(226,75,74,0.6)'; ctx.fillText('ondas', gX+58, 12);
+  ctx.fillStyle = 'rgba(29,158,117,0.7)'; ctx.fillText('alvo', gX+100, 12);
+
+  // Metrics
+  const recentErr = aiState.errHistory.slice(-30).reduce((s,e) => s+Math.abs(e),0)/30;
+  const avgEnergy = motorEnergyHistory.slice(-30).reduce((s,e)=>s+e,0)/30;
+  const stability = Math.max(0, 100 - recentErr*2).toFixed(0);
+  document.getElementById('ai-heading-err').textContent = recentErr.toFixed(1) + '°';
+  document.getElementById('ai-stability').textContent = stability + '%';
+  document.getElementById('ai-energy').textContent = (avgEnergy*100).toFixed(0) + '%';
+  document.getElementById('ai-efficiency').textContent = aiActive ? (stability / (avgEnergy*100 + 1) * 0.8).toFixed(1) : '0.0';
+
+  aiRAF = requestAnimationFrame(runAI);
+}
+
+// ══════════════════════════════════════════════════════
+// EMPUXO SIMULATOR
+// ══════════════════════════════════════════════════════
+let autoBallast = true;
+let empuxoState = { pos: 3, vel: 0, ballastAdj: 0, time: 0 };
+let empuxoRAF;
+
+function toggleAutoBallast() {
+  autoBallast = !autoBallast;
+  const btn = document.getElementById('auto-ballast-btn');
+  btn.textContent = 'Auto-Lastro: ' + (autoBallast ? 'ON' : 'OFF');
+  btn.classList.toggle('active', autoBallast);
+}
+
+function initEmpuxo() {
+  empuxoState = { pos: 3, vel: 0, ballastAdj: 0, time: 0 };
+  if (empuxoRAF) cancelAnimationFrame(empuxoRAF);
+  runEmpuxo();
+}
+
+function updateEmpuxo() {
+  document.getElementById('vol-val').textContent = parseFloat(document.getElementById('rov-vol').value).toFixed(1);
+  document.getElementById('mass-val').textContent = parseFloat(document.getElementById('rov-mass').value).toFixed(1);
+  document.getElementById('fluid-val').textContent = parseFloat(document.getElementById('fluid-dens').value).toFixed(3);
+  document.getElementById('ballast-val').textContent = parseFloat(document.getElementById('ballast').value).toFixed(2);
+  document.getElementById('depth-val').textContent = parseFloat(document.getElementById('depth-set').value).toFixed(1);
+}
+
+function runEmpuxo() {
+  const canvas = document.getElementById('empuxo-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const dt = 0.016;
+  const g = 9.81;
+
+  const vol = parseFloat(document.getElementById('rov-vol').value) * 0.001; // m³
+  const mass = parseFloat(document.getElementById('rov-mass').value);
+  const fluidDens = parseFloat(document.getElementById('fluid-dens').value) * 1000; // kg/m³
+  const ballast = parseFloat(document.getElementById('ballast').value);
+  const depthTarget = parseFloat(document.getElementById('depth-set').value);
+
+  const buoyancy = fluidDens * vol * g;
+  const weight = (mass + ballast + empuxoState.ballastAdj) * g;
+  let netF = buoyancy - weight;
+
+  if (autoBallast) {
+    const depthErr = depthTarget - empuxoState.pos;
+    empuxoState.ballastAdj += -depthErr * 0.003;
+    empuxoState.ballastAdj = Math.max(-2, Math.min(2, empuxoState.ballastAdj));
+    const adjForce = empuxoState.ballastAdj * g;
+    netF += -adjForce;
+  }
+
+  const acc = (netF / (mass + 1)) - empuxoState.vel * 1.5;
+  empuxoState.vel += acc * dt;
+  empuxoState.vel = Math.max(-3, Math.min(3, empuxoState.vel));
+  empuxoState.pos += empuxoState.vel * dt;
+  empuxoState.pos = Math.max(0, Math.min(12, empuxoState.pos));
+  empuxoState.time += dt;
+
+  // DRAW
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#050b14'; ctx.fillRect(0,0,W,H);
+
+  // Water
+  ctx.fillStyle = '#0a1a2e'; ctx.fillRect(0, 0, W, H);
+  
+  // Depth gradient
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0, 'rgba(55,138,221,0.08)');
+  grad.addColorStop(1, 'rgba(5,15,30,0.6)');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
+  // Surface
+  ctx.strokeStyle = 'rgba(55,138,221,0.4)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for(let x=0;x<=W;x+=4) {
+    const wy = 30 + Math.sin(x*0.03 + empuxoState.time*2)*4;
+    x===0 ? ctx.moveTo(x,wy) : ctx.lineTo(x,wy);
+  }
+  ctx.stroke();
+
+  // Depth scale
+  const maxD = 12, scaleX = 50;
+  ctx.strokeStyle = 'rgba(55,138,221,0.2)'; ctx.lineWidth = 0.5;
+  for(let d=0;d<=12;d+=2) {
+    const gy = 40 + (d/maxD)*(H-80);
+    ctx.beginPath(); ctx.moveTo(scaleX-8, gy); ctx.lineTo(W-20, gy); ctx.stroke();
+    ctx.fillStyle = '#3d5a7a'; ctx.font = '9px Space Mono, monospace'; ctx.textAlign = 'right';
+    ctx.fillText(d+'m', scaleX-12, gy+4);
+  }
+  ctx.textAlign = 'left';
+
+  // Target depth
+  const targetY = 40 + (depthTarget/maxD)*(H-80);
+  ctx.strokeStyle = 'rgba(29,158,117,0.5)'; ctx.lineWidth=1; ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(scaleX, targetY); ctx.lineTo(W-20, targetY); ctx.stroke();
+  ctx.setLineDash([]); ctx.fillStyle='#1D9E75'; ctx.font='9px Space Mono, monospace';
+  ctx.fillText('alvo', scaleX+4, targetY-3);
+
+  // ROV
+  const rovY = 40 + (empuxoState.pos/maxD)*(H-80);
+  const rovX = W/2;
+  // Buoyancy/weight arrows
+  const bScale = 30;
+  const bArrow = ((buoyancy-weight)/g)*bScale;
+  ctx.strokeStyle = bArrow > 0 ? '#1D9E75' : '#E24B4A'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(rovX, rovY); ctx.lineTo(rovX, rovY - Math.min(60, Math.max(-60, bArrow))); ctx.stroke();
+  ctx.fillStyle = bArrow > 0 ? '#1D9E75' : '#E24B4A';
+  ctx.font = '10px Space Mono, monospace'; ctx.textAlign = 'center';
+  ctx.fillText((Math.abs(buoyancy-weight)).toFixed(1)+'N', rovX, rovY - bArrow - 8);
+  ctx.textAlign = 'left';
+
+  // ROV body
+  ctx.fillStyle = '#1a3a5c'; ctx.strokeStyle = '#378ADD'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(rovX-35, rovY-15, 70, 30, 6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#0d2a40'; ctx.strokeStyle = '#5DCAA5'; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.roundRect(rovX-12, rovY-25, 24, 12, 3); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#7a9ab8'; ctx.font = '8px Space Mono, monospace'; ctx.textAlign='center';
+  ctx.fillText(empuxoState.pos.toFixed(2)+'m', rovX, rovY+6);
+  ctx.textAlign='left';
+
+  // Metrics
+  document.getElementById('buoyancy-force').textContent = buoyancy.toFixed(1);
+  document.getElementById('weight-force').textContent = weight.toFixed(1);
+  const net = buoyancy - weight;
+  document.getElementById('net-force').textContent = (net > 0 ? '+' : '') + net.toFixed(1);
+  const state = Math.abs(net) < 0.5 ? '≈ Neutro' : net > 0 ? '↑ Sobe' : '↓ Afunda';
+  document.getElementById('buoyancy-state').textContent = state;
+
+  empuxoRAF = requestAnimationFrame(runEmpuxo);
+}
+
+// ══════════════════════════════════════════════════════
+// COMM SIMULATOR
+// ══════════════════════════════════════════════════════
+let commMode = 'lifi';
+let commTime = 0;
+let commRAF;
+let commHistory = { lifi: [], acoustic: [] };
+
+function toggleCommMode() {
+  commMode = commMode === 'lifi' ? 'acoustic' : 'lifi';
+  document.getElementById('comm-mode-btn').textContent = 'Modo: ' + (commMode === 'lifi' ? 'Li-Fi' : 'Acústico');
+}
+
+function initComm() {
+  commTime = 0; commHistory = { lifi: [], acoustic: [] };
+  if (commRAF) cancelAnimationFrame(commRAF);
+  runComm();
+}
+
+function resetComm() { initComm(); }
+
+function updateComm() {
+  document.getElementById('turbidity-val').textContent = parseFloat(document.getElementById('turbidity').value).toFixed(2);
+  document.getElementById('comm-dist-val').textContent = parseFloat(document.getElementById('comm-dist').value).toFixed(1);
+  document.getElementById('lifi-freq-val').textContent = document.getElementById('lifi-freq').value;
+  document.getElementById('acoustic-freq-val').textContent = document.getElementById('acoustic-freq').value;
+}
+
+function runComm() {
+  const canvas = document.getElementById('comm-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const dt = 0.016;
+
+  const turbidity = parseFloat(document.getElementById('turbidity').value);
+  const dist = parseFloat(document.getElementById('comm-dist').value);
+  const lifiFreq = parseFloat(document.getElementById('lifi-freq').value);
+  const acousticFreq = parseFloat(document.getElementById('acoustic-freq').value);
+
+  // Physics models
+  const lifiAttenuation = Math.exp(-(turbidity * 2.5 + 0.1) * dist);
+  const lifiSNR = 40 * lifiAttenuation;
+  const lifiNoise = turbidity * (1 - lifiAttenuation) * 0.3;
+
+  // Acoustic: lower attenuation with turbidity, but frequency matters
+  const acousticAtten = Math.exp(-0.05 * dist * (1 + acousticFreq * 0.0002));
+  const acousticSNR = 30 * acousticAtten * (1 - turbidity * 0.1);
+  const latency = (dist / 1500) * 1000; // ms in water
+
+  commTime += dt;
+  const lifiAmp = lifiAttenuation * (1 + lifiNoise * (Math.random()-0.5));
+  const acousticAmp = acousticAtten;
+  commHistory.lifi.push(lifiAmp);
+  commHistory.acoustic.push(acousticAmp);
+  if (commHistory.lifi.length > 300) { commHistory.lifi.shift(); commHistory.acoustic.shift(); }
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#050b14'; ctx.fillRect(0,0,W,H);
+
+  // Water scene (left panel)
+  const pW = 240;
+  ctx.fillStyle = '#0a1a30'; ctx.fillRect(0,0,pW,H);
+  // Turbidity effect
+  const turbColor = `rgba(${Math.floor(turbidity*80)}, ${Math.floor(turbidity*60)}, ${Math.floor(turbidity*30)}, ${turbidity*0.4})`;
+  ctx.fillStyle = turbColor; ctx.fillRect(0,0,pW,H);
+
+  // TX device
+  ctx.fillStyle = '#1a3050'; ctx.strokeStyle = '#378ADD'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.roundRect(12, H/2-25, 45, 50, 5); ctx.fill(); ctx.stroke();
+  // LED glow
+  const glowInt = 0.5 + 0.5*Math.sin(commTime * lifiFreq * 0.5);
+  ctx.fillStyle = `rgba(55,138,221,${glowInt * lifiAttenuation * 0.8})`;
+  ctx.beginPath(); ctx.arc(34, H/2, 12, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#378ADD'; ctx.font='9px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText('TX',34,H/2+3); ctx.textAlign='left';
+
+  // Signal beam / acoustic wave
+  const beamEnd = 30 + (dist/10)*(pW-70);
+  if (commMode === 'lifi') {
+    const beamAlpha = lifiAttenuation * 0.7;
+    const beamGrad = ctx.createLinearGradient(50, 0, beamEnd, 0);
+    beamGrad.addColorStop(0, `rgba(55,138,221,${beamAlpha})`);
+    beamGrad.addColorStop(1, `rgba(55,138,221,0.02)`);
+    ctx.strokeStyle = beamGrad; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(50, H/2); ctx.lineTo(beamEnd, H/2); ctx.stroke();
+    // Beam spread
+    ctx.strokeStyle = `rgba(55,138,221,${beamAlpha*0.3})`; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(50,H/2-5); ctx.lineTo(beamEnd, H/2-15); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(50,H/2+5); ctx.lineTo(beamEnd, H/2+15); ctx.stroke();
+  } else {
+    for(let ring=1;ring<=4;ring++) {
+      const r = (commTime * 80 * (ring/4)) % (pW - 50);
+      const alpha = (1 - r/(pW-50)) * acousticAtten * 0.6;
+      if(alpha > 0) {
+        ctx.strokeStyle = `rgba(29,158,117,${alpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(34, H/2, r*0.8, -Math.PI*0.6, Math.PI*0.6);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // RX device
+  const rxX = Math.min(beamEnd + 10, pW - 60);
+  ctx.fillStyle = '#1a3050'; ctx.strokeStyle = commMode==='lifi'?'#378ADD':'#1D9E75'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.roundRect(rxX, H/2-20, 38, 40, 5); ctx.fill(); ctx.stroke();
+  const rxGlow = lifiAttenuation > 0.2 ? `rgba(55,138,221,${lifiAttenuation*0.6})` : 'rgba(100,100,100,0.3)';
+  ctx.fillStyle = rxGlow;
+  ctx.beginPath(); ctx.arc(rxX+19, H/2, 8, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#7a9ab8'; ctx.font='9px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText('RX', rxX+19, H/2+3); ctx.textAlign='left';
+
+  // Distance label
+  ctx.fillStyle = '#3d5a7a'; ctx.font='9px Space Mono,monospace';
+  ctx.fillText(dist.toFixed(1)+'m', pW/2-15, H-12);
+
+  // Separator
+  ctx.strokeStyle = 'rgba(55,138,221,0.15)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pW,0); ctx.lineTo(pW,H); ctx.stroke();
+
+  // Signal quality graph
+  const gX = pW+20, gW = W-pW-40, gY=20, gH=H-40;
+  ctx.strokeStyle = 'rgba(55,138,221,0.08)'; ctx.lineWidth=0.5;
+  for(let i=0;i<=5;i++){ const gy=gY+(gH/5)*i; ctx.beginPath();ctx.moveTo(gX,gy);ctx.lineTo(gX+gW,gy);ctx.stroke(); }
+
+  if (commHistory.lifi.length > 2) {
+    ctx.strokeStyle = '#378ADD'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    commHistory.lifi.forEach((v,i) => {
+      const px = gX + (i/commHistory.lifi.length)*gW;
+      const py = gY + (1-v)*gH;
+      i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(29,158,117,0.7)'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    commHistory.acoustic.forEach((v,i) => {
+      const px = gX + (i/commHistory.acoustic.length)*gW;
+      const py = gY + (1-v)*gH;
+      i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+  }
+
+  ctx.fillStyle='#378ADD'; ctx.font='9px Space Mono,monospace'; ctx.fillText('Li-Fi',gX+2,14);
+  ctx.fillStyle='rgba(29,158,117,0.8)'; ctx.fillText('Acústico',gX+40,14);
+
+  // BER calculation
+  const lifi_ber = lifiSNR > 20 ? '< 0.1%' : lifiSNR > 10 ? (5 - lifiSNR/5).toFixed(1)+'%' : '>15%';
+  document.getElementById('snr-lifi').textContent = lifiSNR.toFixed(1) + 'dB';
+  document.getElementById('snr-acoustic').textContent = acousticSNR.toFixed(1) + 'dB';
+  document.getElementById('ber-lifi').textContent = lifi_ber;
+  document.getElementById('comm-latency').textContent = latency.toFixed(2) + 'ms';
+
+  commRAF = requestAnimationFrame(runComm);
+}
+
+// ══════════════════════════════════════════════════════
+// DRAG SIMULATOR
+// ══════════════════════════════════════════════════════
+let dragShape = 'sphere';
+let dragTime = 0;
+let dragRAF;
+const shapeProps = {
+  sphere: { cd: 0.47, area: 0.005, label: 'Esfera', color: '#378ADD' },
+  box: { cd: 1.05, area: 0.008, label: 'Cubo', color: '#E24B4A' },
+  drop: { cd: 0.04, area: 0.004, label: 'Gota hidrodinâmica', color: '#1D9E75' },
+  cylinder: { cd: 0.82, area: 0.006, label: 'Cilindro', color: '#EF9F27' }
+};
+
+function setShape(s) {
+  dragShape = s;
+  ['sphere','box','drop','cylinder'].forEach(x => {
+    document.getElementById('btn-'+x).classList.toggle('active', x===s);
+  });
+}
+
+function initDrag() {
+  dragTime = 0;
+  if (dragRAF) cancelAnimationFrame(dragRAF);
+  runDrag();
+}
+
+function updateDrag() {
+  document.getElementById('drag-vel-val').textContent = parseFloat(document.getElementById('drag-vel').value).toFixed(2);
+  document.getElementById('drag-dens-val').textContent = document.getElementById('drag-dens').value;
+}
+
+function runDrag() {
+  const canvas = document.getElementById('drag-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  dragTime += 0.016;
+
+  const vel = parseFloat(document.getElementById('drag-vel').value);
+  const dens = parseFloat(document.getElementById('drag-dens').value);
+  const sp = shapeProps[dragShape];
+  const dragForce = 0.5 * dens * vel * vel * sp.cd * sp.area;
+  const re = dens * vel * 0.1 / 0.001089; // Re with L=0.1m
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#050b14'; ctx.fillRect(0,0,W,H);
+
+  // Flow lines
+  const numLines = 14;
+  const flowSpeed = vel * 60;
+  for (let i = 0; i < numLines; i++) {
+    const baseY = 20 + (i/(numLines-1))*(H-40);
+    const t = (dragTime * flowSpeed * 0.01 + i * 0.1) % 1;
+
+    ctx.strokeStyle = `rgba(55,138,221,${0.1 + (i%3)*0.08})`;
+    ctx.lineWidth = 0.8;
+
+    const objX = 250, objY = H/2, objR = 45;
+    const dx = objX, dy = baseY - objY;
+    const clearance = Math.abs(dy) - objR;
+
+    ctx.beginPath();
+    let started = false;
+    for (let x = 0; x <= W; x += 4) {
+      const rx = x - objX, ry = baseY - objY;
+      const dist2 = Math.sqrt(rx*rx + ry*ry);
+      let deflection = 0;
+      if (dist2 < objR * 2.5 && dist2 > 0) {
+        const factor = Math.max(0, 1 - dist2 / (objR * 2.5));
+        deflection = ry * factor * factor * (objR / dist2) * 0.6 * sp.cd;
+      }
+      const y = baseY + deflection;
+      if (!started) { ctx.moveTo(x, y); started=true; } else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  // Object
+  ctx.fillStyle = '#0d1a30'; ctx.strokeStyle = sp.color; ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (dragShape === 'sphere') {
+    ctx.arc(250, H/2, 40, 0, Math.PI*2);
+  } else if (dragShape === 'box') {
+    ctx.roundRect(210, H/2-35, 80, 70, 4);
+  } else if (dragShape === 'drop') {
+    ctx.moveTo(290, H/2);
+    ctx.bezierCurveTo(290, H/2-50, 220, H/2-50, 210, H/2);
+    ctx.bezierCurveTo(220, H/2+50, 290, H/2+50, 290, H/2);
+  } else {
+    ctx.ellipse(250, H/2, 40, 30, 0, 0, Math.PI*2);
+  }
+  ctx.fill(); ctx.stroke();
+
+  // Drag force arrow
+  const arrowLen = Math.min(180, dragForce * 120);
+  const arrowX = 300;
+  ctx.strokeStyle = sp.color; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(arrowX, H/2); ctx.lineTo(arrowX+arrowLen, H/2); ctx.stroke();
+  ctx.fillStyle = sp.color;
+  ctx.beginPath(); ctx.moveTo(arrowX+arrowLen, H/2); ctx.lineTo(arrowX+arrowLen-10, H/2-6); ctx.lineTo(arrowX+arrowLen-10, H/2+6); ctx.closePath(); ctx.fill();
+  ctx.font='700 12px Space Mono,monospace'; ctx.fillText(dragForce.toFixed(3)+'N', arrowX+8, H/2-8);
+
+  ctx.fillStyle='#3d5a7a'; ctx.font='9px Space Mono,monospace';
+  ctx.fillText(sp.label, 210, H/2+60);
+  ctx.fillStyle=sp.color; ctx.font='10px Space Mono,monospace';
+  ctx.fillText('Cd = ' + sp.cd, 210, H/2+75);
+
+  document.getElementById('drag-cd').textContent = sp.cd;
+  document.getElementById('drag-force').textContent = dragForce.toFixed(4);
+  document.getElementById('drag-area').textContent = sp.area;
+  document.getElementById('drag-re').textContent = (re/1000).toFixed(1);
+
+  dragRAF = requestAnimationFrame(runDrag);
+}
+
+// ══════════════════════════════════════════════════════
+// PISTON SIMULATOR
+// ══════════════════════════════════════════════════════
+let pistonRAF;
+
+function initPiston() {
+  if (pistonRAF) cancelAnimationFrame(pistonRAF);
+  runPiston();
+}
+
+function updatePiston() {
+  document.getElementById('piston-pos-val').textContent = document.getElementById('piston-pos').value;
+  document.getElementById('syringe-vol-val').textContent = document.getElementById('syringe-vol').value;
+  document.getElementById('piston-mass-val').textContent = parseFloat(document.getElementById('piston-mass').value).toFixed(1);
+}
+
+function pistonAuto() {
+  // Find neutral position
+  const mass = parseFloat(document.getElementById('piston-mass').value);
+  const syringeVol = parseFloat(document.getElementById('syringe-vol').value);
+  const rovVol = 4.0;
+  const fluidDens = 1025;
+  const totalVol = rovVol;
+  const neutralMass = fluidDens * totalVol * 0.001;
+  const waterNeeded = (neutralMass - mass) * 1000;
+  const pct = Math.max(0, Math.min(100, (waterNeeded / syringeVol) * 100));
+  document.getElementById('piston-pos').value = pct.toFixed(0);
+  updatePiston();
+}
+
+let pistonTime = 0;
+function runPiston() {
+  const canvas = document.getElementById('piston-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  pistonTime += 0.016;
+
+  const pct = parseFloat(document.getElementById('piston-pos').value) / 100;
+  const syringeVol = parseFloat(document.getElementById('syringe-vol').value);
+  const mass = parseFloat(document.getElementById('piston-mass').value);
+
+  const waterVol = pct * syringeVol;
+  const totalMass = mass + waterVol * 0.001;
+  const rovVolLiters = 4.0;
+  const density = totalMass / (rovVolLiters * 0.001);
+  const state = density < 1020 ? '↑ Sobe' : density > 1030 ? '↓ Afunda' : '≈ Neutro';
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#050b14'; ctx.fillRect(0,0,W,H);
+
+  // Syringe barrel
+  const sX=120, sY=60, sW=220, sH=120;
+  ctx.fillStyle='#0a1525'; ctx.strokeStyle='rgba(212,83,126,0.5)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(sX, sY, sW, sH, 8); ctx.fill(); ctx.stroke();
+
+  // Water fill
+  const fillW = pct * (sW - 30);
+  const fillGrad = ctx.createLinearGradient(sX+15, 0, sX+15+fillW, 0);
+  fillGrad.addColorStop(0, 'rgba(55,138,221,0.7)');
+  fillGrad.addColorStop(1, 'rgba(29,158,117,0.5)');
+  ctx.fillStyle = fillGrad;
+  ctx.beginPath(); ctx.roundRect(sX+15, sY+15, Math.max(0,fillW), sH-30, 4); ctx.fill();
+
+  // Scale marks
+  for(let i=0;i<=10;i++) {
+    const mx = sX+15+(i/10)*(sW-30);
+    ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=0.5;
+    ctx.beginPath(); ctx.moveTo(mx, sY+sH); ctx.lineTo(mx, sY+sH+8); ctx.stroke();
+    ctx.fillStyle='#3d5a7a'; ctx.font='8px Space Mono,monospace'; ctx.textAlign='center';
+    ctx.fillText(i*10+'%', mx, sY+sH+18);
+  }
+  ctx.textAlign='left';
+
+  // Piston indicator
+  const pistX = sX+15+pct*(sW-30);
+  ctx.fillStyle='rgba(212,83,126,0.9)'; ctx.strokeStyle='#D4537E'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(pistX-5, sY+8, 10, sH-16, 3); ctx.fill(); ctx.stroke();
+
+  // Volume label
+  ctx.fillStyle='#B5D4F4'; ctx.font='12px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(waterVol.toFixed(1)+'mL', sX+sW/2, sY+sH/2+5);
+  ctx.textAlign='left';
+
+  // Nema17
+  const mX=30, mY=sY+sH/2-35;
+  ctx.fillStyle='#0d1525'; ctx.strokeStyle='rgba(239,159,39,0.5)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.roundRect(mX, mY, 70, 70, 6); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='rgba(239,159,39,0.3)';
+  ctx.beginPath(); ctx.arc(mX+35, mY+35, 20, 0, Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='#EF9F27'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(mX+35, mY+35);
+  ctx.lineTo(mX+35+Math.cos(pistonTime*3)*18, mY+35+Math.sin(pistonTime*3)*18);
+  ctx.stroke();
+  ctx.fillStyle='#EF9F27'; ctx.font='8px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText('NEMA17',mX+35,mY+70+12); ctx.textAlign='left';
+
+  // Lead screw
+  const screwY = sY+sH/2;
+  ctx.strokeStyle='rgba(239,159,39,0.4)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(mX+70, screwY); ctx.lineTo(pistX, screwY); ctx.stroke();
+  for(let x=mX+70;x<pistX;x+=8){
+    ctx.strokeStyle='rgba(239,159,39,0.2)'; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.moveTo(x, screwY-4); ctx.lineTo(x+4, screwY+4); ctx.stroke();
+  }
+
+  // ROV mini preview
+  const rX=480, rY=100, rW=180, rH=160;
+  ctx.fillStyle='#0a1a30'; ctx.strokeStyle='rgba(55,138,221,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.roundRect(rX-10, rY-10, rW+20, rH+20, 8); ctx.fill(); ctx.stroke();
+  // Water in ROV
+  const waterH = pct * (rH*0.6);
+  const waterY2 = rY + rH - waterH;
+  ctx.fillStyle='rgba(55,138,221,0.25)';
+  ctx.beginPath(); ctx.roundRect(rX, waterY2, rW, waterH, 4); ctx.fill();
+  // Syringe in ROV
+  ctx.fillStyle='rgba(212,83,126,0.4)'; ctx.strokeStyle='rgba(212,83,126,0.6)'; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.roundRect(rX+rW*0.3, rY+20, rW*0.4, rH*0.4, 4); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='rgba(212,83,126,0.8)';
+  ctx.beginPath(); ctx.roundRect(rX+rW*0.3, rY+20+rH*0.4*(1-pct), rW*0.4, rH*0.4*pct, 2); ctx.fill();
+  ctx.fillStyle='#7a9ab8'; ctx.font='8px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText('ROV',rX+rW/2,rY+rH+10);
+  ctx.fillStyle = density < 1020 ? '#1D9E75' : density > 1030 ? '#E24B4A' : '#EF9F27';
+  ctx.fillText(state, rX+rW/2, rY+rH+22); ctx.textAlign='left';
+
+  const torque = waterVol * 0.001 * 9.81 * 5 * 100;
+  document.getElementById('piston-water-vol').textContent = waterVol.toFixed(1) + 'mL';
+  document.getElementById('piston-density').textContent = density.toFixed(0) + ' kg/m³';
+  document.getElementById('piston-state').textContent = state;
+  document.getElementById('piston-torque').textContent = torque.toFixed(1);
+
+  pistonRAF = requestAnimationFrame(runPiston);
+}
+
+// ══════════════════════════════════════════════════════
+// SEAL SIMULATOR
+// ══════════════════════════════════════════════════════
+let sealMat = 'silicone';
+let sealTime = 0;
+let sealRAF;
+const sealMaterials = {
+  oring: { limit: 50, degradeTemp: 0.8, color: '#378ADD', label: 'O-Ring EPDM' },
+  epoxy: { limit: 200, degradeTemp: 0.3, color: '#1D9E75', label: 'Resina Epóxi' },
+  silicone: { limit: 30, degradeTemp: 0.5, color: '#EF9F27', label: 'Silicone RTV' }
+};
+
+function setSealMat(m) {
+  sealMat = m;
+  ['oring','epoxy','silicone'].forEach(x => document.getElementById('seal-'+x).classList.toggle('active', x===m));
+}
+
+function initSeal() {
+  sealTime = 0;
+  if (sealRAF) cancelAnimationFrame(sealRAF);
+  runSeal();
+}
+
+function updateSeal() {
+  document.getElementById('seal-depth-val').textContent = document.getElementById('seal-depth').value;
+  document.getElementById('seal-temp-val').textContent = document.getElementById('seal-temp').value;
+}
+
+let sealHistory = [];
+
+function runSeal() {
+  const canvas = document.getElementById('seal-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  sealTime += 0.016;
+
+  const depth = parseFloat(document.getElementById('seal-depth').value);
+  const temp = parseFloat(document.getElementById('seal-temp').value);
+  const mat = sealMaterials[sealMat];
+  const pressure = 1 + depth * 0.0981;
+  const tempFactor = 1 + (temp > 30 ? (temp-30)*mat.degradeTemp*0.01 : 0);
+  const effectiveLimit = mat.limit / tempFactor;
+  const integrity = Math.max(0, Math.min(100, (1 - pressure/effectiveLimit) * 100));
+  const status = integrity > 80 ? 'OK' : integrity > 50 ? 'Aviso' : integrity > 20 ? 'Risco' : 'FALHOU';
+
+  sealHistory.push({ p: pressure, integrity });
+  if (sealHistory.length > 300) sealHistory.shift();
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#050b14'; ctx.fillRect(0,0,W,H);
+
+  // Tube cross section
+  const tX=60, tY=H/2-65, tW=180, tH=130;
+  ctx.fillStyle='#0d0a18'; ctx.strokeStyle=mat.color; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.roundRect(tX, tY, tW, tH, 10); ctx.fill(); ctx.stroke();
+
+  // Pressure visualization
+  const pressNorm = Math.min(1, pressure/effectiveLimit);
+  const pressColor = pressNorm < 0.5 ? '#1D9E75' : pressNorm < 0.8 ? '#EF9F27' : '#E24B4A';
+  ctx.fillStyle = `rgba(${pressNorm<0.5?'29,158,117':pressNorm<0.8?'239,159,39':'226,75,74'},${pressNorm*0.3})`;
+  ctx.beginPath(); ctx.roundRect(tX+4, tY+4, tW-8, tH-8, 7); ctx.fill();
+
+  // Component inside
+  ctx.fillStyle='#0a0a1a'; ctx.strokeStyle='#3d5a7a'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.roundRect(tX+30, tY+30, tW-60, tH-60, 5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#1D9E75'; ctx.beginPath(); ctx.arc(tX+tW/2, tY+tH/2, 8, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#3d5a7a'; ctx.font='9px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText('Arduino', tX+tW/2, tY+tH/2+22); ctx.textAlign='left';
+
+  // O-ring indicators
+  const oringY = [tY+12, tY+tH-12];
+  oringY.forEach(oy => {
+    const crackAmt = Math.max(0, pressNorm - 0.8) * 5;
+    ctx.strokeStyle = integrity > 50 ? mat.color : '#E24B4A';
+    ctx.lineWidth = integrity > 50 ? 3 : 1.5;
+    ctx.beginPath(); ctx.moveTo(tX, oy); ctx.lineTo(tX+tW, oy); ctx.stroke();
+    if (crackAmt > 0) {
+      ctx.strokeStyle='rgba(55,138,221,0.7)'; ctx.lineWidth=1;
+      for(let i=0;i<3;i++) {
+        const cx2 = tX + 30 + i*40 + Math.sin(sealTime*5+i)*5;
+        ctx.beginPath();
+        ctx.moveTo(cx2, oy); ctx.lineTo(cx2+crackAmt*3, oy+8); ctx.stroke();
+      }
+    }
+  });
+
+  // Pressure arrows
+  const nArrows = Math.min(8, Math.floor(pressure/5)+2);
+  for(let i=0;i<nArrows;i++) {
+    const ax = tX - 20, ay = tY + 20 + (i/(nArrows-1))*(tH-40);
+    ctx.strokeStyle=pressColor; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(ax-15,ay); ctx.lineTo(ax,ay); ctx.stroke();
+    ctx.fillStyle=pressColor;
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ax-6,ay-4); ctx.lineTo(ax-6,ay+4); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle=pressColor; ctx.font='10px Space Mono,monospace';
+  ctx.fillText(pressure.toFixed(1)+'bar', tX-55, tY-8);
+
+  // Integrity gauge (right side)
+  const gaugeCX=360, gaugeCY=H/2, gaugeR=70;
+  ctx.fillStyle='#0a1020'; ctx.strokeStyle='rgba(55,138,221,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(gaugeCX,gaugeCY,gaugeR,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  
+  const intAngle = -Math.PI/2 + (integrity/100)*Math.PI*1.7 - Math.PI*0.85;
+  const arcColor = integrity>70?'#1D9E75':integrity>40?'#EF9F27':'#E24B4A';
+  ctx.strokeStyle='rgba(55,138,221,0.1)'; ctx.lineWidth=8;
+  ctx.beginPath(); ctx.arc(gaugeCX,gaugeCY,gaugeR-8,-Math.PI*0.85+(-Math.PI/2), Math.PI*0.85+(-Math.PI/2)); ctx.stroke();
+  ctx.strokeStyle=arcColor; ctx.lineWidth=8;
+  ctx.beginPath(); ctx.arc(gaugeCX,gaugeCY,gaugeR-8,-Math.PI*0.85+(-Math.PI/2), intAngle); ctx.stroke();
+
+  ctx.fillStyle = arcColor; ctx.font='700 20px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(integrity.toFixed(0)+'%', gaugeCX, gaugeCY+6);
+  ctx.fillStyle='#3d5a7a'; ctx.font='9px Space Mono,monospace';
+  ctx.fillText('integridade', gaugeCX, gaugeCY+22);
+  ctx.fillStyle=arcColor; ctx.font='700 11px Space Mono,monospace';
+  ctx.fillText(status, gaugeCX, gaugeCY-24); ctx.textAlign='left';
+
+  // History graph
+  const gX=460, gW=W-gX-20, gY=20, gH=H-40;
+  ctx.strokeStyle='rgba(55,138,221,0.08)'; ctx.lineWidth=0.5;
+  for(let i=0;i<=5;i++){const gy=gY+(gH/5)*i;ctx.beginPath();ctx.moveTo(gX,gy);ctx.lineTo(gX+gW,gy);ctx.stroke();}
+  if(sealHistory.length>2){
+    ctx.strokeStyle=arcColor; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    sealHistory.forEach((h,i)=>{
+      const px=gX+(i/sealHistory.length)*gW;
+      const py=gY+(1-h.integrity/100)*gH;
+      i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+  }
+  ctx.fillStyle='#3d5a7a'; ctx.font='9px Space Mono,monospace'; ctx.fillText('integridade', gX+2, 14);
+
+  document.getElementById('seal-pressure').textContent = pressure.toFixed(2);
+  document.getElementById('seal-integrity').textContent = integrity.toFixed(0)+'%';
+  document.getElementById('seal-limit').textContent = effectiveLimit.toFixed(0);
+  document.getElementById('seal-status').textContent = status;
+
+  sealRAF = requestAnimationFrame(runSeal);
+}
+
+// ══════════════════════════════════════════════════════
+// THRUST SIMULATOR
+// ══════════════════════════════════════════════════════
+let thrustTime = 0;
+let thrustRAF;
+let thrustHistory = [];
+
+function initThrust() {
+  thrustTime = 0; thrustHistory = [];
+  if (thrustRAF) cancelAnimationFrame(thrustRAF);
+  runThrust();
+}
+
+function updateThrust() {
+  document.getElementById('rpm-val').textContent = document.getElementById('rpm').value;
+  document.getElementById('prop-diam-val').textContent = document.getElementById('prop-diam').value;
+  document.getElementById('prop-pitch-val').textContent = parseFloat(document.getElementById('prop-pitch').value).toFixed(2);
+  document.getElementById('prop-blades-val').textContent = document.getElementById('prop-blades').value;
+  document.getElementById('submerged-val').textContent = document.getElementById('submerged').value === '1' ? 'SIM' : 'NÃO';
+}
+
+function runThrust() {
+  const canvas = document.getElementById('thrust-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  thrustTime += 0.016;
+
+  const rpm = parseFloat(document.getElementById('rpm').value);
+  const diam = parseFloat(document.getElementById('prop-diam').value) / 1000;
+  const pitch = parseFloat(document.getElementById('prop-pitch').value);
+  const blades = parseInt(document.getElementById('prop-blades').value);
+  const submerged = document.getElementById('submerged').value === '1';
+
+  const rps = rpm / 60;
+  const fluidDens = submerged ? 1025 : 1.225;
+  const area = Math.PI * (diam/2)**2;
+  const advance = pitch * diam * rps;
+  const kt = 0.3 * blades / 3 * pitch;
+  const thrustRaw = kt * fluidDens * rps**2 * diam**4;
+  const thrust_gf = thrustRaw * 101.97;
+  const kq = kt * 0.1;
+  const torque = kq * fluidDens * rps**2 * diam**5;
+  const power = torque * 2 * Math.PI * rps;
+  const current = power / 11.1;
+  const efficiency = submerged ? (thrustRaw / (power + 0.01)) * 100 : (thrustRaw / (power + 0.01)) * 40;
+
+  thrustHistory.push({ t: thrustTime, thrust: thrust_gf, power, efficiency });
+  if (thrustHistory.length > 300) thrustHistory.shift();
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#050b14'; ctx.fillRect(0,0,W,H);
+
+  // Background water / air
+  if (submerged) {
+    ctx.fillStyle='#0a1a30'; ctx.fillRect(0,0,W,H);
+  }
+
+  // Propeller
+  const cx=200, cy=H/2;
+  const propR = diam * 600;
+  const rot = thrustTime * rps * Math.PI * 2;
+
+  // Wake circles
+  for(let r=1;r<=4;r++){
+    const wR = propR + r*25 + (thrustTime*20*r)%60;
+    const alpha = Math.max(0, 0.4 - (wR-propR)/100);
+    ctx.strokeStyle = submerged ? `rgba(55,138,221,${alpha})` : `rgba(200,220,255,${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(cx+wR*0.3, cy, wR*0.2, wR, 0, 0, Math.PI*2); ctx.stroke();
+  }
+
+  // Hub
+  ctx.fillStyle='#1a2a40'; ctx.strokeStyle='rgba(226,75,74,0.7)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx,cy,12,0,Math.PI*2); ctx.fill(); ctx.stroke();
+
+  // Blades
+  for(let b=0;b<blades;b++){
+    const angle = rot + (b/blades)*Math.PI*2;
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(angle);
+    ctx.fillStyle='rgba(226,75,74,0.85)';
+    ctx.strokeStyle='rgba(226,75,74,0.5)'; ctx.lineWidth=0.8;
+    ctx.beginPath();
+    ctx.ellipse(0, -propR/2, propR*0.12, propR*0.5, pitch*0.4, 0, Math.PI*2);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  // Thrust arrow
+  const thrustLen = Math.min(200, thrust_gf / 3);
+  ctx.strokeStyle='#E24B4A'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(cx+15, cy); ctx.lineTo(cx+15+thrustLen, cy); ctx.stroke();
+  ctx.fillStyle='#E24B4A';
+  ctx.beginPath(); ctx.moveTo(cx+15+thrustLen,cy); ctx.lineTo(cx+5+thrustLen,cy-8); ctx.lineTo(cx+5+thrustLen,cy+8); ctx.closePath(); ctx.fill();
+  ctx.font='700 13px Space Mono,monospace'; ctx.fillStyle='#E24B4A';
+  ctx.fillText(thrust_gf.toFixed(0)+'gf', cx+20, cy-12);
+
+  // Motor
+  ctx.fillStyle='#0d1525'; ctx.strokeStyle='rgba(239,159,39,0.6)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.roundRect(cx-60, cy-22, 40, 44, 5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#EF9F27'; ctx.font='8px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(rpm.toFixed(0), cx-40, cy+4);
+  ctx.fillText('RPM', cx-40, cy+14); ctx.textAlign='left';
+
+  // History graph
+  const gX=390, gW=W-gX-20, gY=20, gH=H/2-25;
+  ctx.strokeStyle='rgba(55,138,221,0.08)'; ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){const gy=gY+(gH/4)*i;ctx.beginPath();ctx.moveTo(gX,gy);ctx.lineTo(gX+gW,gy);ctx.stroke();}
+  if(thrustHistory.length>2){
+    const maxT = Math.max(1, Math.max(...thrustHistory.map(h=>h.thrust)));
+    ctx.strokeStyle='#E24B4A'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    thrustHistory.forEach((h,i)=>{const px=gX+(i/thrustHistory.length)*gW;const py=gY+(1-h.thrust/maxT)*gH;i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);});
+    ctx.stroke();
+  }
+  ctx.fillStyle='#E24B4A'; ctx.font='9px Space Mono,monospace'; ctx.fillText('thrust',gX+2,14);
+
+  const gY2=H/2+10, gH2=H/2-30;
+  ctx.strokeStyle='rgba(55,138,221,0.08)'; ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){const gy=gY2+(gH2/4)*i;ctx.beginPath();ctx.moveTo(gX,gy);ctx.lineTo(gX+gW,gy);ctx.stroke();}
+  if(thrustHistory.length>2){
+    const maxE = Math.max(1, Math.max(...thrustHistory.map(h=>h.efficiency)));
+    ctx.strokeStyle='#1D9E75'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    thrustHistory.forEach((h,i)=>{const px=gX+(i/thrustHistory.length)*gW;const py=gY2+(1-h.efficiency/maxE)*gH2;i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);});
+    ctx.stroke();
+  }
+  ctx.fillStyle='#1D9E75'; ctx.font='9px Space Mono,monospace'; ctx.fillText('eficiência',gX+2,H/2+5);
+
+  document.getElementById('thrust-force').textContent = thrust_gf.toFixed(0);
+  document.getElementById('thrust-current').textContent = current.toFixed(2);
+  document.getElementById('thrust-eff').textContent = efficiency.toFixed(1)+'%';
+  document.getElementById('thrust-power').textContent = power.toFixed(1);
+
+  thrustRAF = requestAnimationFrame(runThrust);
+}
+
+// ══════════════════════════════════════════════════════
+// INIT on load
+// ══════════════════════════════════════════════════════
+window.onload = () => {
+  updatePID(); updateAI(); updateEmpuxo(); updateComm(); updateDrag(); updatePiston(); updateSeal(); updateThrust();
+  // Start PID as default visible
+  setTimeout(() => {
+    if (document.getElementById('sec-overview').classList.contains('active')) {
+      // overview visible, no sim running
+    }
+  }, 100);
+};
+</script>
+</body>
+</html>
